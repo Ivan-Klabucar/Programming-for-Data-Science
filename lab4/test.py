@@ -120,28 +120,27 @@ featuresFn = [
 ]
 
 # %% 
-df['mol'].apply(lambda row: fn(row['mol']), axis='columns', result_type='expand')
+morganFeatures = df['mol'].apply(lambda x: list(AllChem.GetMorganFingerprintAsBitVect(x, 2,nBits=124)))
+newFeatures = pd.DataFrame(pd.DataFrame(morganFeatures)['mol'].to_list())
 
-morgan = df['mol'].apply(lambda x: AllChem.GetMorganFingerprintAsBitVect(x, 2,nBits=124), axis='columns', result_type='expand')
-print(morgan.shape)
 
 # %%
 for colName, fn in tqdm(featuresFn):
     try:
-        df[colName] = df['mol'].apply(fn)
+        newFeatures[colName] = df['mol'].apply(fn)
     except:
         print("Error in feature: ", colName)
-df = df.copy()
+newFeatures = newFeatures.copy()
 
 # %%
-df.corr().style.background_gradient(cmap='coolwarm')
+newFeatures.corr().style.background_gradient(cmap='coolwarm')
 
 # %%
 
 pca = PCA(0.95)
-dfFeatures = df.drop(['mol', 'INDEX', 'SMILES', 'ACTIVE'], axis=1)
-pca.fit(dfFeatures)
-pcaDf = pd.DataFrame(pca.transform(dfFeatures))
+# dfFeatures = df.drop(['mol', 'INDEX', 'SMILES', 'ACTIVE'], axis=1)
+pca.fit(newFeatures)
+pcaDf = pd.DataFrame(pca.transform(newFeatures))
 pcaDf['labels'] = df['ACTIVE']
 print(pcaDf.shape)
 
